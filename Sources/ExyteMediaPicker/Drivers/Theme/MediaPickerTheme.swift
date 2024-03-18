@@ -16,7 +16,7 @@ public struct MediaPickerTheme {
                 selection: MediaPickerTheme.Selection = .init(),
                 cellStyle: MediaPickerTheme.CellStyle = .init(),
                 error: MediaPickerTheme.Error = .init(),
-                defaultHeader: MediaPickerTheme.DefaultHeader = .init()) {
+                defaultHeader: MediaPickerTheme.DefaultHeader = .systemDefault) {
         self.main = main
         self.selection = selection
         self.cellStyle = cellStyle
@@ -95,16 +95,29 @@ extension MediaPickerTheme {
         public let background: Color
 
         public init(background: Color = Color(uiColor: .systemGroupedBackground),
-                    segmentTintColor: Color = .white,
-                    selectedSegmentTintColor: Color = .white,
-                    selectedText: Color = .black,
-                    unselectedText: Color = .black) {
+                    segmentTintColor: Color? = .white,
+                    selectedSegmentTintColor: Color? = .white,
+                    selectedText: Color? = .black,
+                    unselectedText: Color? = .black) {
             self.background = background
 
+            guard let segmentTintColor, let selectedSegmentTintColor, let selectedText, let unselectedText else
+            {
+                return
+            }
             UISegmentedControl.appearance().backgroundColor = UIColor(segmentTintColor)
             UISegmentedControl.appearance().selectedSegmentTintColor = UIColor(selectedSegmentTintColor)
             UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor(selectedText)], for: .selected)
             UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor(unselectedText)], for: .normal)
         }
     }
+}
+
+extension MediaPickerTheme.DefaultHeader {
+    public static let systemDefault = Self.init(
+        segmentTintColor: nil,
+        selectedSegmentTintColor: nil,
+        selectedText: nil,
+        unselectedText: nil
+    )
 }
