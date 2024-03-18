@@ -54,8 +54,10 @@ final class SelectionService: ObservableObject {
             }
     }
 
-    func removeAll() {
+    func removeAll(update: Bool = true) {
         selected.removeAll()
+        
+        guard update else { return }
         onChange?([])
     }
 

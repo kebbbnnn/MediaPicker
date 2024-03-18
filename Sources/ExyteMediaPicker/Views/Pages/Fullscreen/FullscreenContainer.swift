@@ -87,7 +87,7 @@ struct FullscreenContainer: View {
                 if selectionParamsHolder.selectionLimit == 1 {
                     Button("Select") {
                         selectionService.onSelect(assetMediaModel: selectedMediaModel)
-                        selectionService.removeAll()
+                        selectionService.removeAll(update: false)
                         shouldDismiss()
                     }
                     .padding([.horizontal, .bottom], 20)
