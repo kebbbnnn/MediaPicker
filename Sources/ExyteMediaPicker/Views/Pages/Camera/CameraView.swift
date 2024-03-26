@@ -62,6 +62,13 @@ struct StandardConrolsCameraView: View {
 
     @State private var capturingPhotos = true
     @State private var videoCaptureInProgress = false
+    
+    private let durationFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.hour, .minute, .second]
+        formatter.zeroFormattingBehavior = .pad
+        return formatter
+    }()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -74,11 +81,23 @@ struct StandardConrolsCameraView: View {
                     }
                 }
                 .foregroundColor(.white)
-                .padding(.top, safeAreaInsets.top)
+                .padding(.top/*, safeAreaInsets.top*/) // MARK: Commented oout for now
                 .padding(.leading)
                 .padding(.bottom)
-
+                
                 Spacer()
+                
+                if !capturingPhotos {
+                    Text(durationFormatter.string(from: cameraViewModel.duration)!)
+                        .foregroundColor(.white)
+                        .padding(.vertical, 8)
+                        .frame(width: 92)
+                        .background(.red)
+                        .cornerRadius(3.0)
+                    
+                    Spacer()
+                    Spacer()
+                }
             }
 
             LiveCameraView(
@@ -155,19 +174,30 @@ struct StandardConrolsCameraView: View {
             viewModel.pickedMediaUrl = $0
             didTakePicture()
         }
+        .onAppear {
+            if let maxRecordedDuration = selectionParamsHolder.maxRecordedDuration {
+                cameraViewModel.setMaxRecordedDuration(maxRecordedDuration)
+            }
+            
+            if selectionParamsHolder.mediaType.singleTypeOnly, case .video = selectionParamsHolder.mediaType {
+                capturingPhotos = false
+            }
+        }
     }
 
     var photoVideoToggle: some View {
         HStack {
-            Button("Video") {
-                capturingPhotos = false
+            if !selectionParamsHolder.mediaType.singleTypeOnly {
+                Button("Video") {
+                    capturingPhotos = false
+                }
+                .foregroundColor(capturingPhotos ? Color.white : Color.yellow)
+                
+                Button("Photo") {
+                    capturingPhotos = true
+                }
+                .foregroundColor(capturingPhotos ? Color.yellow : Color.white)
             }
-            .foregroundColor(capturingPhotos ? Color.white : Color.yellow)
-
-            Button("Photo") {
-                capturingPhotos = true
-            }
-            .foregroundColor(capturingPhotos ? Color.yellow : Color.white)
         }
     }
 

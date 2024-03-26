@@ -18,7 +18,10 @@ struct FullscreenContainer: View {
     @State var selection: AssetMediaModel.ID
     var selectionParamsHolder: SelectionParamsHolder
     var shouldDismiss: ()->()
+    var onDone: SimpleClosure?
 
+    @State var playButton: AnyView? = nil
+    
     private var selectedMediaModel: AssetMediaModel? {
         assetMediaModels.first { $0.id == selection }
     }
@@ -33,9 +36,11 @@ struct FullscreenContainer: View {
     var body: some View {
         TabView(selection: $selection) {
             ForEach(assetMediaModels, id: \.id) { assetMediaModel in
-                FullscreenCell(viewModel: FullscreenCellViewModel(mediaModel: assetMediaModel))
+                FullscreenCell(viewModel: FullscreenCellViewModel(mediaModel: assetMediaModel), playButtonType: .exportable({ playButton = $0 }))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .tag(assetMediaModel.id)
+                    .ignoresSafeArea()
+                    .gesture((selectionParamsHolder.selectionLimit ?? 0) > 1 ? nil : DragGesture())
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
@@ -43,7 +48,7 @@ struct FullscreenContainer: View {
             theme.main.fullscreenPhotoBackground
                 .ignoresSafeArea()
         }
-        .overlay(alignment: .top) {
+        .overlay(alignment: .bottom) {
             controlsOverlay
         }
         .onAppear {
@@ -72,23 +77,35 @@ struct FullscreenContainer: View {
 
     var controlsOverlay: some View {
         HStack {
-            Image(systemName: "xmark")
+            Button("Cancel") {
+                isPresented = false
+            }
+            .padding([.horizontal, .bottom], 20)
+            /*Image(systemName: "xmark")
                 .resizable()
                 .frame(width: 20, height: 20)
                 .padding([.horizontal, .bottom], 20)
                 .contentShape(Rectangle())
                 .onTapGesture {
                     isPresented = false
-                }
+                }*/
 
+            Spacer()
+            
+            if let playButton {
+                playButton
+                    .padding([.horizontal, .bottom], 20)
+            }
+            
             Spacer()
 
             if let selectedMediaModel = selectedMediaModel {
                 if selectionParamsHolder.selectionLimit == 1 {
-                    Button("Select") {
+                    Button("Choose") {
                         selectionService.onSelect(assetMediaModel: selectedMediaModel)
                         selectionService.removeAll(update: false)
                         shouldDismiss()
+                        onDone?()
                     }
                     .padding([.horizontal, .bottom], 20)
                 } else {
@@ -101,6 +118,9 @@ struct FullscreenContainer: View {
                 }
             }
         }
+        .padding(.vertical)
+        .padding(.vertical)
         .foregroundStyle(theme.selection.fullscreenTint)
+        .background(Color(uiColor: .black).opacity(0.6))
     }
 }

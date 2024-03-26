@@ -6,18 +6,21 @@
 //
 
 import SwiftUI
+import CoreMedia
 
 final public class SelectionParamsHolder: ObservableObject {
 
     @Published public var mediaType: MediaSelectionType = .photoAndVideo
     @Published public var selectionStyle: MediaSelectionStyle = .checkmark
     @Published public var selectionLimit: Int? // if nil - unlimited
+    @Published public var maxRecordedDuration: CMTime?
     @Published public var showFullscreenPreview: Bool = true // if false, tap on image immediately selects this image and closes the picker
 
-    public init(mediaType: MediaSelectionType = .photoAndVideo, selectionStyle: MediaSelectionStyle = .checkmark, selectionLimit: Int? = nil, showFullscreenPreview: Bool = true) {
+    public init(mediaType: MediaSelectionType = .photoAndVideo, selectionStyle: MediaSelectionStyle = .checkmark, selectionLimit: Int? = nil, maxRecordedDuration: CMTime? = nil, showFullscreenPreview: Bool = true) {
         self.mediaType = mediaType
         self.selectionStyle = selectionStyle
         self.selectionLimit = selectionLimit
+        self.maxRecordedDuration = maxRecordedDuration
         self.showFullscreenPreview = showFullscreenPreview
     }
 }
@@ -38,5 +41,9 @@ public enum MediaSelectionType {
 
     var allowsVideo: Bool {
         [.photoAndVideo, .video].contains(self)
+    }
+    
+    var singleTypeOnly: Bool {
+        self != .photoAndVideo
     }
 }

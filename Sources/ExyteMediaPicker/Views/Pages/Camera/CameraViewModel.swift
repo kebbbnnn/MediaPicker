@@ -22,12 +22,17 @@ final class CameraViewModel: NSObject, ObservableObject {
 
     @Published private(set) var flashEnabled = false
     @Published private(set) var snapOverlay = false
+    @Published private(set) var duration: TimeInterval = .zero
 
     let captureSession = AVCaptureSession()
     var capturedPhotoPublisher: AnyPublisher<URL, Never> { capturedPhotoSubject.eraseToAnyPublisher() }
 
     private let photoOutput = AVCapturePhotoOutput()
-    private let videoOutput = AVCaptureMovieFileOutput()
+    private var videoOutput: AVCaptureMovieFileOutput = {
+        let output = AVCaptureMovieFileOutput()
+        //output.maxRecordedDuration = CMTime(seconds: 16, preferredTimescale: 1)
+        return output
+    }()
     private let motionManager = MotionManager()
     private let sessionQueue = DispatchQueue(label: "LiveCameraQueue")
     private let capturedPhotoSubject = PassthroughSubject<URL, Never>()
@@ -41,6 +46,8 @@ final class CameraViewModel: NSObject, ObservableObject {
     private var lastScale: CGFloat = 1
     private var zoomAllowed: Bool { captureDevice?.position == .back }
 
+    var timer: Timer?
+    
     override init() {
         super.init()
         sessionQueue.async { [weak self] in
@@ -93,6 +100,10 @@ final class CameraViewModel: NSObject, ObservableObject {
             captureDevice?.device.torchMode = mode
             captureDevice?.device.unlockForConfiguration()
         }
+    }
+    
+    func setMaxRecordedDuration(_ duration: CMTime) {
+        self.videoOutput.maxRecordedDuration = duration
     }
 
     func flipCamera() {
@@ -239,6 +250,8 @@ extension CameraViewModel: AVCapturePhotoCaptureDelegate {
         didFinishProcessingPhoto photo: AVCapturePhoto,
         error: Error?
     ) {
+        let recordedSeconds: Float64 = CMTimeGetSeconds(videoOutput.recordedDuration)
+        
         guard let cgImage = photo.cgImageRepresentation() else { return }
 
         let photoOrientation: UIImage.Orientation
@@ -259,7 +272,19 @@ extension CameraViewModel: AVCapturePhotoCaptureDelegate {
 }
 
 extension CameraViewModel: AVCaptureFileOutputRecordingDelegate {
+    func fileOutput(_ output: AVCaptureFileOutput, didStartRecordingTo fileURL: URL, from connections: [AVCaptureConnection]) {
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            let recordedDuration: CMTime = self.videoOutput.recordedDuration
+            let recordedSeconds: Float64 = CMTimeGetSeconds(recordedDuration)
+            
+            self.duration = TimeInterval(recordedSeconds)
+        }
+    }
+    
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+        timer?.invalidate()
+        timer = nil
         capturedPhotoSubject.send(outputFileURL)
     }
 }

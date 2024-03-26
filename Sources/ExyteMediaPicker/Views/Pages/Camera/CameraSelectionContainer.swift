@@ -13,11 +13,12 @@ public struct CameraSelectionView: View {
     @State private var index: Int = 0
 
     var selectionParamsHolder: SelectionParamsHolder
+    @Binding var playButton: AnyView?
 
     public var body: some View {
         TabView(selection: $index) {
             ForEach(cameraSelectionService.added.enumerated().map({ $0 }), id: \.offset) { (index, mediaModel) in
-                FullscreenCell(viewModel: FullscreenCellViewModel(mediaModel: mediaModel))
+                FullscreenCell(viewModel: FullscreenCellViewModel(mediaModel: mediaModel), playButtonType: .exportable({ playButton = $0 }))
                     .tag(index)
                     .frame(maxHeight: .infinity)
                     .padding(.vertical)
@@ -51,38 +52,76 @@ struct DefaultCameraSelectionContainer: View {
 
     @Binding var showingPicker: Bool
     var selectionParamsHolder: SelectionParamsHolder
+    var onDone: SimpleClosure?
 
+    @State var playButton: AnyView? = nil
+    
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             HStack {
-                Button("Cancel") {
+                /*Button("Cancel") {
                     viewModel.onCancelCameraSelection(cameraSelectionService.hasSelected)
                 }
-                .foregroundColor(.white)
+                .foregroundColor(.white)*/
                 Spacer()
-            }
-            .padding()
-
-            CameraSelectionView(selectionParamsHolder: selectionParamsHolder)
-
-            HStack {
-                Button("Done") {
-                    showingPicker = false
-                }
-                Spacer()
+                
                 if selectionParamsHolder.selectionLimit != 1 {
                     Button {
                         viewModel.setPickerMode(.camera)
                     } label: {
                         Image(systemName: "plus.app")
                             .resizable()
-                            .frame(width: 30, height: 30)
+                            .frame(width: 24, height: 24)
                     }
+                    .foregroundColor(.white)
                 }
             }
-            .foregroundColor(.white)
-            .font(.system(size: 16))
             .padding()
+
+            CameraSelectionView(selectionParamsHolder: selectionParamsHolder, playButton: self.$playButton)
+                .overlay(alignment: .bottom) {
+                    HStack {
+                        /*Button("Done") {
+                            showingPicker = false
+                            onDone?()
+                        }*/
+                        Button("Cancel") {
+                            viewModel.onCancelCameraSelection(cameraSelectionService.hasSelected)
+                        }
+                        .foregroundColor(.white)
+                        .padding([.horizontal, .bottom], 20)
+                        
+                        Spacer()
+                        
+                        if let playButton {
+                            playButton
+                                .padding([.horizontal, .bottom], 20)
+                        }
+                        
+                        Spacer()
+                        /*if selectionParamsHolder.selectionLimit != 1 {
+                            Button {
+                                viewModel.setPickerMode(.camera)
+                            } label: {
+                                Image(systemName: "plus.app")
+                                    .resizable()
+                                    .frame(width: 30, height: 30)
+                            }
+                        }*/
+                        
+                        Button("Choose") {
+                            showingPicker = false
+                            onDone?()
+                        }
+                        .padding([.horizontal, .bottom], 20)
+                    }
+                    .foregroundColor(.white)
+                    .font(.system(size: 16))
+                    .padding()
+                    .padding(.vertical)
+                    .foregroundStyle(theme.selection.fullscreenTint)
+                    .background(Color(uiColor: .black).opacity(0.6))
+                }
         }
         .background(theme.main.cameraSelectionBackground)
     }

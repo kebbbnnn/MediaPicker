@@ -4,6 +4,7 @@
 
 import SwiftUI
 import Combine
+import CoreMedia
 
 public struct MediaPicker<AlbumSelectionContent: View, CameraSelectionContent: View, CameraViewContent: View>: View {
 
@@ -52,6 +53,8 @@ public struct MediaPicker<AlbumSelectionContent: View, CameraSelectionContent: V
     private var pickerMode: Binding<MediaPickerMode>?
     private var showingLiveCameraCell: Bool = false
     private var didPressCancelCamera: (() -> Void)?
+    private var onCancel: (() -> Void)?
+    private var onDone: SimpleClosure?
     private var orientationHandler: MediaPickerOrientationHandler = {_ in}
     private var filterClosure: FilterClosure?
     private var massFilterClosure: MassFilterClosure?
@@ -148,6 +151,8 @@ public struct MediaPicker<AlbumSelectionContent: View, CameraSelectionContent: V
         let albumSelectionView = AlbumSelectionView(viewModel: viewModel, showingCamera: cameraBinding(), currentFullscreenMedia: $currentFullscreenMedia, showingLiveCameraCell: showingLiveCameraCell, selectionParamsHolder: selectionParamsHolder, filterClosure: filterClosure, massFilterClosure: massFilterClosure) {
             // has media limit of 1, and it's been selected
             isPresented = false
+        } onDone: {
+            onDone?()
         }
 
         if let albumSelectionBuilder = albumSelectionBuilder {
@@ -171,13 +176,14 @@ public struct MediaPicker<AlbumSelectionContent: View, CameraSelectionContent: V
                 cameraSelectionBuilder(
                     { viewModel.setPickerMode(.camera) }, // add more
                     { viewModel.onCancelCameraSelection(cameraSelectionService.hasSelected) }, // cancel
-                    CameraSelectionView(selectionParamsHolder: selectionParamsHolder)
+                    CameraSelectionView(selectionParamsHolder: selectionParamsHolder, playButton: .constant(nil))
                 )
             } else {
                 DefaultCameraSelectionContainer(
                     viewModel: viewModel,
                     showingPicker: $isPresented,
-                    selectionParamsHolder: selectionParamsHolder
+                    selectionParamsHolder: selectionParamsHolder,
+                    onDone: onDone
                 )
             }
         }
@@ -231,7 +237,9 @@ public struct MediaPicker<AlbumSelectionContent: View, CameraSelectionContent: V
     var deleteAllButton: some View {
         Button("Delete All") {
             cameraSelectionService.removeAll()
-            viewModel.setPickerMode(.photos)
+            if let mode = self.pickerMode?.wrappedValue {
+                viewModel.setPickerMode(mode)
+            }
             onChange(selectionService.mapToMedia())
         }
     }
@@ -242,6 +250,7 @@ public struct MediaPicker<AlbumSelectionContent: View, CameraSelectionContent: V
                 selectionService.removeAll()
                 cameraSelectionService.removeAll()
                 isPresented = false
+                onCancel?()
             }
 
             Spacer()
@@ -368,6 +377,18 @@ public extension MediaPicker {
         mediaPicker.didPressCancelCamera = didPressCancelCamera
         return mediaPicker
     }
+    
+    func onCancel(_ onCancel: @escaping ()->()) -> MediaPicker {
+        var mediaPicker = self
+        mediaPicker.onCancel = onCancel
+        return mediaPicker
+    }
+    
+    func onDone(_ onDone: @escaping ()->()) -> MediaPicker {
+        var mediaPicker = self
+        mediaPicker.onDone = onDone
+        return mediaPicker
+    }
 
     func orientationHandler(_ orientationHandler: @escaping MediaPickerOrientationHandler) -> MediaPicker {
         var mediaPicker = self
@@ -391,5 +412,10 @@ public extension MediaPicker {
         var mediaPicker = self
         mediaPicker.pickerMode = mode
         return mediaPicker
+    }
+    
+    func maxRecordedDuration(_ duration: Double) -> MediaPicker {
+        selectionParamsHolder.maxRecordedDuration = CMTime(seconds: duration, preferredTimescale: 1)
+        return self
     }
 }

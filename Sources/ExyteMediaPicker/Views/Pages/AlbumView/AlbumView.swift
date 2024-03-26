@@ -20,6 +20,7 @@ struct AlbumView: View {
     var shouldShowLoadingCell: Bool
     var selectionParamsHolder: SelectionParamsHolder
     var shouldDismiss: ()->()
+    var onDone: SimpleClosure?
 
     @State private var fullscreenItem: AssetMediaModel?
 
@@ -94,7 +95,8 @@ private extension AlbumView {
                     assetMediaModels: viewModel.assetMediaModels,
                     selection: item.id,
                     selectionParamsHolder: selectionParamsHolder,
-                    shouldDismiss: shouldDismiss
+                    shouldDismiss: shouldDismiss,
+                    onDone: onDone
                 )
             }
         }

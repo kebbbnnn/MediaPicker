@@ -7,12 +7,22 @@ import SwiftUI
 import AVKit
 
 struct FullscreenCell: View {
+    enum PlayButtonType {
+        case `default`
+        case exportable((AnyView) -> Void)
+    }
     
     @Environment(\.mediaPickerTheme) private var theme
 
     @StateObject var viewModel: FullscreenCellViewModel
     @ObservedObject var keyboardHeightHelper = KeyboardHeightHelper.shared
+    let playButtonType: PlayButtonType
 
+    init(viewModel: FullscreenCellViewModel, playButtonType: PlayButtonType = .default) {
+        self._viewModel = StateObject(wrappedValue: viewModel)
+        self.playButtonType = playButtonType
+    }
+    
     var body: some View {
         GeometryReader { g in
             Group {
@@ -37,8 +47,28 @@ struct FullscreenCell: View {
         .task {
             await viewModel.onStart()
         }
+        .onAppear {
+            setupExportablePlayButtonIfAvailable()
+        }
         .onDisappear {
             viewModel.onStop()
+        }
+        .onChange(of: viewModel.isPlaying) { _ in
+            setupExportablePlayButtonIfAvailable()
+        }
+    }
+    
+    func setupExportablePlayButtonIfAvailable() {
+        if case let .exportable(exporter) = playButtonType {
+            let button = Button {
+                viewModel.togglePlay()
+            } label: {
+                Image(systemName: !viewModel.isPlaying ? "play.fill" : "pause.fill")
+                    .resizable()
+                    .frame(width: 24, height: 24)
+                    .foregroundColor(.white.opacity(0.8))
+            }
+            exporter(AnyView(button))
         }
     }
 
@@ -53,18 +83,20 @@ struct FullscreenCell: View {
         PlayerView(player: player, bgColor: theme.main.fullscreenPhotoBackground, useFill: useFill)
             .disabled(true)
             .overlay {
-                ZStack {
-                    Color.clear
-                    if !viewModel.isPlaying {
-                        Image(systemName: "play.fill")
-                            .resizable()
-                            .frame(width: 50, height: 50)
-                            .foregroundColor(.white.opacity(0.8))
+                if case .default = playButtonType {
+                    ZStack {
+                        Color.clear
+                        if !viewModel.isPlaying {
+                            Image(systemName: "play.fill")
+                                .resizable()
+                                .frame(width: 50, height: 50)
+                                .foregroundColor(.white.opacity(0.8))
+                        }
                     }
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    viewModel.togglePlay()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        viewModel.togglePlay()
+                    }
                 }
             }
     }
