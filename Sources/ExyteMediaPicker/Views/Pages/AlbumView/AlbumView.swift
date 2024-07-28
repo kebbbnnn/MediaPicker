@@ -21,6 +21,7 @@ struct AlbumView: View {
     var selectionParamsHolder: SelectionParamsHolder
     var shouldDismiss: ()->()
     var onDone: SimpleClosure?
+    var header: () -> AnyView
 
     @State private var fullscreenItem: AssetMediaModel?
 
@@ -37,54 +38,58 @@ private extension AlbumView {
 
     @ViewBuilder
     var content: some View {
-        ScrollView {
-            VStack {
-                if let action = permissionsService.photoLibraryAction {
-                    PermissionsActionView(action: .library(action))
-                }
-                if shouldShowCamera, let action = permissionsService.cameraAction {
-                    PermissionsActionView(action: .camera(action))
-                }
-                if viewModel.isLoading {
-                    ProgressView()
-                        .padding()
-                } else if viewModel.assetMediaModels.isEmpty, !shouldShowLoadingCell {
-                    Text("Empty data")
-                        .font(.title3)
-                        .foregroundColor(theme.main.text)
-                } else {
-                    MediasGrid(viewModel.assetMediaModels) {
+        VStack(spacing: 0) {
+            header()
+            
+            ScrollView {
+                VStack {
+                    if let action = permissionsService.photoLibraryAction {
+                        PermissionsActionView(action: .library(action))
+                    }
+                    if shouldShowCamera, let action = permissionsService.cameraAction {
+                        PermissionsActionView(action: .camera(action))
+                    }
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .padding()
+                    } else if viewModel.assetMediaModels.isEmpty, !shouldShowLoadingCell {
+                        Text("Empty data")
+                            .font(.title3)
+                            .foregroundColor(theme.main.text)
+                    } else {
+                        MediasGrid(viewModel.assetMediaModels) {
 #if !targetEnvironment(simulator)
-                        if shouldShowCamera && permissionsService.cameraAction == nil {
-                            LiveCameraCell {
-                                showingCamera = true
+                            if shouldShowCamera && permissionsService.cameraAction == nil {
+                                LiveCameraCell {
+                                    showingCamera = true
+                                }
                             }
-                        }
 #endif
-                    } content: { assetMediaModel in
-                        cellView(assetMediaModel)
-                    } loadingCell: {
-                        if shouldShowLoadingCell {
-                            ZStack {
-                                Color.white.opacity(0.5)
-                                ProgressView()
+                        } content: { assetMediaModel in
+                            cellView(assetMediaModel)
+                        } loadingCell: {
+                            if shouldShowLoadingCell {
+                                ZStack {
+                                    Color.white.opacity(0.5)
+                                    ProgressView()
+                                }
+                                .aspectRatio(1, contentMode: .fit)
                             }
-                            .aspectRatio(1, contentMode: .fit)
+                        }
+                        .onChange(of: viewModel.assetMediaModels) { newValue in
+                            selectionService.updateSelection(with: newValue)
                         }
                     }
-                    .onChange(of: viewModel.assetMediaModels) { newValue in 
-                        selectionService.updateSelection(with: newValue)
-                    }
+                    
+                    Spacer()
                 }
-                
-                Spacer()
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity)
-        }
-        .background(theme.main.albumSelectionBackground)
-        .onTapGesture {
-            if keyboardHeightHelper.keyboardDisplayed {
-                dismissKeyboard()
+            .background(theme.main.albumSelectionBackground)
+            .onTapGesture {
+                if keyboardHeightHelper.keyboardDisplayed {
+                    dismissKeyboard()
+                }
             }
         }
         .overlay {
@@ -98,6 +103,7 @@ private extension AlbumView {
                     shouldDismiss: shouldDismiss,
                     onDone: onDone
                 )
+                .animation(.spring, value: fullscreenItem)
             }
         }
     }

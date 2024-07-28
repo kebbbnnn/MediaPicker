@@ -153,19 +153,22 @@ public struct MediaPicker<AlbumSelectionContent: View, CameraSelectionContent: V
             isPresented = false
         } onDone: {
             onDone?()
+        } header: {
+            AnyView(defaultHeaderView)
         }
 
         if let albumSelectionBuilder = albumSelectionBuilder {
             albumSelectionBuilder(ModeSwitcher(selection: modeBinding()), albumSelectionView, isInFullscreen)
         } else {
-            VStack(spacing: 0) {
+            /*VStack(spacing: 0) {
                 if !isInFullscreen {
                     defaultHeaderView
                 } else {
                     Color.clear.frame(height: 15)
                 }
                 albumSelectionView
-            }
+            }*/
+            albumSelectionView
         }
     }
 
@@ -273,12 +276,12 @@ public struct MediaPicker<AlbumSelectionContent: View, CameraSelectionContent: V
 
             Spacer()
 
-            Button("Done") {
+            /*Button("Done") {
                 if selectionService.selected.isEmpty, let current = currentFullscreenMedia {
                     onChange([current])
                 }
                 isPresented = false
-            }
+            }*/
         }
         .foregroundColor(theme.main.text)
         .padding(12)

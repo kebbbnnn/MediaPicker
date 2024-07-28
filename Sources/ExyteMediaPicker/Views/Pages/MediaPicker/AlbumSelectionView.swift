@@ -20,6 +20,7 @@ public struct AlbumSelectionView: View {
     let massFilterClosure: MediaPicker.MassFilterClosure?
     var shouldDismiss: ()->()
     var onDone: SimpleClosure?
+    var header: () -> AnyView = { AnyView(Color.clear) }
 
     @State private var showingLoadingCell = false
 
@@ -36,7 +37,8 @@ public struct AlbumSelectionView: View {
                 shouldShowLoadingCell: showingLoadingCell,
                 selectionParamsHolder: selectionParamsHolder,
                 shouldDismiss: shouldDismiss,
-                onDone: onDone
+                onDone: onDone,
+                header: header
             )
         case .albums:
             AlbumsView(
@@ -65,7 +67,8 @@ public struct AlbumSelectionView: View {
                     shouldShowLoadingCell: showingLoadingCell,
                     selectionParamsHolder: selectionParamsHolder,
                     shouldDismiss: shouldDismiss,
-                    onDone: onDone
+                    onDone: onDone,
+                    header: header
                 )
                 .id(album.id)
             }
