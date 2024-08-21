@@ -17,7 +17,7 @@ struct CustomCameraView<CameraViewContent: View>: View {
     let didPressCancel: () -> Void
     var cameraViewBuilder: CameraViewClosure
 
-    @StateObject private var cameraViewModel = CameraViewModel()
+    @StateObject private var cameraViewModel = CameraViewModel(muted: true)
 
     var body: some View {
         cameraViewBuilder(
@@ -58,7 +58,7 @@ struct StandardConrolsCameraView: View {
     let didPressCancel: () -> Void
     let selectionParamsHolder: SelectionParamsHolder
 
-    @StateObject private var cameraViewModel = CameraViewModel()
+    @StateObject private var cameraViewModel = CameraViewModel(muted: true)
 
     @State private var capturingPhotos = true
     @State private var videoCaptureInProgress = false

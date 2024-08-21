@@ -48,7 +48,11 @@ final class CameraViewModel: NSObject, ObservableObject {
 
     var timer: Timer?
     
-    override init() {
+    let muted: Bool
+    
+    init(muted: Bool) {
+        self.muted = muted
+        
         super.init()
         sessionQueue.async { [weak self] in
             self?.configureSession()
@@ -165,10 +169,12 @@ final class CameraViewModel: NSObject, ObservableObject {
         guard session.canAddInput(captureDeviceInput) else { return }
         session.addInput(captureDeviceInput)
 
-        guard let captureAudioDevice = selectAudioCaptureDevice() else { return }
-        guard let captureAudioDeviceInput = try? AVCaptureDeviceInput(device: captureAudioDevice) else { return }
-        guard session.canAddInput(captureAudioDeviceInput) else { return }
-        session.addInput(captureAudioDeviceInput)
+        if !self.muted {
+            guard let captureAudioDevice = selectAudioCaptureDevice() else { return }
+            guard let captureAudioDeviceInput = try? AVCaptureDeviceInput(device: captureAudioDevice) else { return }
+            guard session.canAddInput(captureAudioDeviceInput) else { return }
+            session.addInput(captureAudioDeviceInput)
+        }
 
         let defaultZoom = CGFloat(truncating: captureDevice.virtualDeviceSwitchOverVideoZoomFactors.first ?? minScale as NSNumber)
 
